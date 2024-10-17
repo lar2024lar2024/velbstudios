@@ -1,9 +1,9 @@
 "use client"; // Marcar como Client Component
 
 import { useState, useEffect } from 'react';
-import { storage, db } from '../firebase'; // Certifique-se de que o Firebase Storage e Realtime Database estão configurados corretamente
+import { storage, db } from '../firebase'; // Certifique-se de que o Firebase Storage e Firestore estão configurados corretamente
 import { ref as storageRef, deleteObject } from "firebase/storage";
-import { ref as databaseRef, onValue, remove } from "firebase/database";
+import { collection, getDocs, doc, deleteDoc } from "firebase/firestore"; // Firestore
 
 export default function VerPDFs() {
   const [pdfs, setPdfs] = useState([]);
@@ -13,21 +13,16 @@ export default function VerPDFs() {
   const [currentPage, setCurrentPage] = useState(1); // Paginação
   const pdfsPerPage = 6; // Número de PDFs por página
 
+  // Função para buscar PDFs do Firestore
   useEffect(() => {
     const fetchPdfs = async () => {
-      const pdfsRef = databaseRef(db, 'pdfs');
-      onValue(pdfsRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const formattedData = Object.keys(data).map((key) => ({
-            id: key,
-            ...data[key],
-          }));
-          setPdfs(formattedData);
-        } else {
-          setPdfs([]);
-        }
-      });
+      const pdfsRef = collection(db, 'pdfs');
+      const querySnapshot = await getDocs(pdfsRef);
+      const pdfsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setPdfs(pdfsData);
     };
 
     fetchPdfs();
@@ -71,11 +66,11 @@ export default function VerPDFs() {
         try {
           const pdf = pdfs.find((p) => p.id === id);
           const pdfStorageRef = storageRef(storage, `pdfs/${pdf.name}`);
-          const pdfDatabaseRef = databaseRef(db, `pdfs/${id}`);
+          const pdfDocRef = doc(db, 'pdfs', id);
 
-          // Excluir do Firebase Storage e Realtime Database
-          await deleteObject(pdfStorageRef);
-          await remove(pdfDatabaseRef);
+          // Excluir do Firebase Storage e Firestore
+          await deleteObject(pdfStorageRef); // Exclui do Storage
+          await deleteDoc(pdfDocRef); // Exclui do Firestore
 
           // Atualiza a lista localmente
           setPdfs(pdfs.filter((p) => p.id !== id));
@@ -93,11 +88,11 @@ export default function VerPDFs() {
       for (let pdf of pdfs) {
         try {
           const pdfStorageRef = storageRef(storage, `pdfs/${pdf.name}`);
-          const pdfDatabaseRef = databaseRef(db, `pdfs/${pdf.id}`);
+          const pdfDocRef = doc(db, 'pdfs', pdf.id);
 
-          // Excluir do Firebase Storage e Realtime Database
+          // Excluir do Firebase Storage e Firestore
           await deleteObject(pdfStorageRef);
-          await remove(pdfDatabaseRef);
+          await deleteDoc(pdfDocRef);
         } catch (error) {
           console.error("Erro ao excluir o PDF:", error.message);
         }

@@ -1,11 +1,12 @@
 import { initializeApp } from 'firebase/app';
-import { getDatabase } from 'firebase/database';
+import { getFirestore } from 'firebase/firestore'; // Importando o Firestore
 import { getStorage } from 'firebase/storage'; // Importando o Firebase Storage
+import { getDatabase } from 'firebase/database'; // Importando o Realtime Database
 
 const firebaseConfig = {
   apiKey: "AIzaSyCRAejF0axsoPK69RK3I0NYoverZ7n_wbg",
   authDomain: "gicanas-de-igrejas.firebaseapp.com",
-  databaseURL: "https://gicanas-de-igrejas-default-rtdb.firebaseio.com",
+  databaseURL: "https://gicanas-de-igrejas-default-rtdb.firebaseio.com", // Adicione a URL do Realtime Database aqui
   projectId: "gicanas-de-igrejas",
   storageBucket: "gicanas-de-igrejas.appspot.com",
   messagingSenderId: "155613125749",
@@ -16,10 +17,14 @@ const firebaseConfig = {
 // Inicializando o Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicializando o Realtime Database
-const db = getDatabase(app);
+// Inicializando o Firestore
+const db = getFirestore(app);
 
 // Inicializando o Firebase Storage
-const storage = getStorage(app); // Adiciona a inicialização do Firebase Storage
+const storage = getStorage(app);
 
-export { db, storage }; // Exporta o `storage` junto com o `db`
+// Inicializando o Realtime Database
+const realtimeDb = getDatabase(app); // Configuração do Realtime Database
+
+// Exporta o Firestore `db`, o Firebase Storage `storage`, e o Realtime Database `realtimeDb`
+export { db, storage, realtimeDb };

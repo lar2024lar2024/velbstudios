@@ -1,9 +1,9 @@
 "use client"; // Marcando o componente como Client Component
 
 import { useState } from 'react';
-import { storage, db } from '../firebase'; // Certifique-se de que o Firebase Storage e Realtime Database estão configurados corretamente
+import { storage, db } from '../firebase'; // Certifique-se de que o Firebase Storage e Firestore estão configurados corretamente
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { ref as databaseRef, push, set } from "firebase/database"; // Importando métodos do Realtime Database
+import { collection, addDoc } from "firebase/firestore"; // Importando métodos do Firestore
 
 export default function EnviarBanner() {
   const [file, setFile] = useState(null);
@@ -23,6 +23,7 @@ export default function EnviarBanner() {
       return;
     }
 
+    // Criando referência de armazenamento para o arquivo no Firebase Storage
     const storageReference = storageRef(storage, `banners/${file.name}`);
     const uploadTask = uploadBytesResumable(storageReference, file);
 
@@ -41,15 +42,18 @@ export default function EnviarBanner() {
           setUploadedUrl(downloadURL);
           setShowSuccessMessage(true);
 
-          // Enviar URL para o Realtime Database
-          const bannersRef = databaseRef(db, 'banners'); // Referência para o nó 'banners'
-          const newBannerRef = push(bannersRef); // Criar um novo item no nó 'banners'
+          // Enviar dados para o Firestore
+          const bannersCollectionRef = collection(db, 'banners'); // Referência para a coleção 'banners'
 
-          // Usar 'set' diretamente com a referência gerada por 'push'
-          set(newBannerRef, {
+          // Adiciona um novo documento à coleção 'banners' com os dados do banner
+          addDoc(bannersCollectionRef, {
             url: downloadURL,
             name: file.name,
             timeUploaded: new Date().toISOString(), // Armazena a data e hora do envio
+          }).then(() => {
+            console.log("Documento salvo no Firestore com sucesso!");
+          }).catch((error) => {
+            console.error("Erro ao salvar no Firestore:", error);
           });
 
           // Esconde a mensagem de sucesso após 5 segundos

@@ -1,9 +1,9 @@
 "use client"; // Marcando o componente como Client Component
 
 import { useState } from 'react';
-import { storage, db } from '../firebase'; // Certifique-se de que o Firebase Storage e Realtime Database estão configurados corretamente
+import { storage, db } from '../firebase'; // Certifique-se de que o Firebase Storage e Firestore estão configurados corretamente
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { ref as databaseRef, push, set } from "firebase/database";
+import { collection, addDoc } from "firebase/firestore"; // Usando Firestore ao invés de Realtime Database
 
 export default function EnviarPDF() {
   const [file, setFile] = useState(null);
@@ -35,25 +35,27 @@ export default function EnviarPDF() {
       (error) => {
         console.error("Erro ao enviar o PDF:", error);
       },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+      async () => {
+        try {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           setUploadedUrl(downloadURL);
           setShowSuccessMessage(true); // Exibe a mensagem de sucesso
 
-          // Salva no Realtime Database
-          const pdfsRef = databaseRef(db, 'pdfs');
-          const newPdfRef = push(pdfsRef); // Cria uma nova referência no nó 'pdfs'
-          set(newPdfRef, {
+          // Salvando no Firestore
+          const pdfsCollectionRef = collection(db, 'pdfs'); // Referência da coleção 'pdfs' no Firestore
+          await addDoc(pdfsCollectionRef, {
             url: downloadURL,
             name: file.name,
-            timeUploaded: new Date().toISOString(), // Salva a data e hora de envio
+            timeUploaded: new Date().toISOString(),
           });
 
           // Esconde a mensagem após 5 segundos
           setTimeout(() => {
             setShowSuccessMessage(false);
           }, 5000);
-        });
+        } catch (error) {
+          console.error("Erro ao salvar informações no Firestore:", error);
+        }
       }
     );
   };

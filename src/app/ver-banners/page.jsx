@@ -1,9 +1,9 @@
 "use client"; // Marcar como Client Component
 
 import { useState, useEffect } from 'react';
-import { storage, db } from '../firebase'; // Certifique-se de que o Firebase Storage e Realtime Database estão configurados corretamente
+import { storage, db } from '../firebase'; // Certifique-se de que o Firebase Storage e Firestore estão configurados corretamente
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
-import { ref as databaseRef, remove, onValue, set } from "firebase/database";
+import { collection, doc, updateDoc, getDocs, deleteDoc } from "firebase/firestore"; // Importando funções do Firestore
 
 export default function VerBanners() {
   const [banners, setBanners] = useState([]);
@@ -15,21 +15,16 @@ export default function VerBanners() {
   const [currentPage, setCurrentPage] = useState(1); // Paginação
   const bannersPerPage = 6; // Número de banners por página
 
+  // Função para buscar banners do Firestore
   useEffect(() => {
     const fetchBanners = async () => {
-      const bannersRef = databaseRef(db, 'banners');
-      onValue(bannersRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const formattedData = Object.keys(data).map((key) => ({
-            id: key,
-            ...data[key],
-          }));
-          setBanners(formattedData);
-        } else {
-          setBanners([]);
-        }
-      });
+      const bannersRef = collection(db, 'banners');
+      const querySnapshot = await getDocs(bannersRef);
+      const bannersData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setBanners(bannersData);
     };
 
     fetchBanners();
@@ -45,7 +40,7 @@ export default function VerBanners() {
     setNewFile(e.target.files[0]);
   };
 
-  // Função para substituir o banner no Firebase Storage e atualizar no Realtime Database
+  // Função para substituir o banner no Firebase Storage e atualizar no Firestore
   const replaceBanner = async () => {
     if (!newFile || !selectedBannerForReplace) {
       alert("Selecione um banner e um novo arquivo.");
@@ -73,9 +68,9 @@ export default function VerBanners() {
             // Obter URL do novo banner após o upload
             const newBannerUrl = await getDownloadURL(uploadTask.snapshot.ref);
 
-            // Atualizar o banner no Realtime Database
-            const bannerDatabaseRef = databaseRef(db, `banners/${selectedBannerForReplace.id}`);
-            await set(bannerDatabaseRef, {
+            // Atualizar o banner no Firestore
+            const bannerDocRef = doc(db, 'banners', selectedBannerForReplace.id);
+            await updateDoc(bannerDocRef, {
               url: newBannerUrl,
               name: newFile.name,
               timeUploaded: new Date().toISOString(), // Armazena a data e hora do envio
