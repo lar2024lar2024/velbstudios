@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { FaHome, FaFilePdf, FaImage, FaCogs } from 'react-icons/fa';
+import { FaHome, FaFilePdf, FaImage, FaCogs, FaChartBar } from 'react-icons/fa';
 
 export default function NavbarDesktop() {
   return (
@@ -28,6 +28,12 @@ export default function NavbarDesktop() {
             <FaCogs className="mr-2" />
             <Link href="/gerenciar-gincana" className="hover:text-white transition-colors duration-300">
               Gerenciar Gincana
+            </Link>
+          </li>
+          <li className="flex items-center">
+            <FaChartBar className="mr-2" />
+            <Link href="/relatorio" className="hover:text-white transition-colors duration-300">
+              Relatórios
             </Link>
           </li>
         </ul>

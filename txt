@@ -1,3 +1,0 @@
-git commit -m "Seu segundo commit"
-.git
-git push origin main

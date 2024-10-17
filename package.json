@@ -9,12 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@nivo/bar": "^0.87.0",
     "@react-pdf-viewer/core": "^3.12.0",
     "@react-pdf-viewer/default-layout": "^3.12.0",
     "admin-panel": "file:",
+    "chart.js": "^4.4.5",
     "firebase": "^10.14.1",
     "next": "14.2.15",
     "react": "^18",
+    "react-chartjs-2": "^5.2.0",
     "react-dom": "^18",
     "react-icons": "^5.3.0"
   },
