@@ -1,18 +1,27 @@
-"use client"; // Marcando o componente como Client Component
+"use client"; // Marca o componente como Client Component
 
 import { useState } from 'react';
-import { storage, db } from '../firebase'; // Certifique-se de que o Firebase Storage e Firestore estão configurados corretamente
+import { storage, db } from '../firebase'; // Firebase configurado
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { collection, addDoc } from "firebase/firestore"; // Importando métodos do Firestore
+import { collection, addDoc } from "firebase/firestore"; // Firestore para armazenar as informações do banner
 
 export default function EnviarBanner() {
   const [file, setFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedUrl, setUploadedUrl] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    setFile(selectedFile);
+
+    // Obter as dimensões da imagem
+    const img = new Image();
+    img.src = URL.createObjectURL(selectedFile);
+    img.onload = () => {
+      setDimensions({ width: img.width, height: img.height });
+    };
   };
 
   const handleSubmit = (e) => {
@@ -23,7 +32,7 @@ export default function EnviarBanner() {
       return;
     }
 
-    // Criando referência de armazenamento para o arquivo no Firebase Storage
+    // Criando referência de armazenamento no Firebase
     const storageReference = storageRef(storage, `banners/${file.name}`);
     const uploadTask = uploadBytesResumable(storageReference, file);
 
@@ -37,18 +46,17 @@ export default function EnviarBanner() {
         console.error("Erro ao enviar o banner:", error);
       },
       () => {
-        // Após o upload, obtenha a URL do banner
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
           setUploadedUrl(downloadURL);
           setShowSuccessMessage(true);
 
-          // Enviar dados para o Firestore
-          const bannersCollectionRef = collection(db, 'banners'); // Referência para a coleção 'banners'
-
-          // Adiciona um novo documento à coleção 'banners' com os dados do banner
+          // Enviar informações ao Firestore
+          const bannersCollectionRef = collection(db, 'banners');
           addDoc(bannersCollectionRef, {
             url: downloadURL,
             name: file.name,
+            width: dimensions.width,
+            height: dimensions.height,
             timeUploaded: new Date().toISOString(), // Armazena a data e hora do envio
           }).then(() => {
             console.log("Documento salvo no Firestore com sucesso!");
